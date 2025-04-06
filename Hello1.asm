@@ -1,41 +1,19 @@
 section .data
-	msg1 db "Enter your name: ",20H
-	msg1len equ $-msg1
-	msg2 db "Enter your name: ",20H
-	msg2len equ $-msg2
+    msg db "Hello, World!", 10     ; Message with newline
+    msglen equ $ - msg             ; Calculate message length
 
-section .bss
-	nm resb 20
-	len resb 1
+section .text
+    global _start
 
-section .code
-	global _start
-	_start:
-		mov rax,1
-		mov rdi,1
-		mov rsi,msg1
-		mov rdx,msg1len
-		syscall
+_start:
+    ; syscall: write(1, msg, msglen)
+    mov rax, 1          ; syscall number for write
+    mov rdi, 1          ; file descriptor 1 = stdout
+    mov rsi, msg        ; address of the message
+    mov rdx, msglen     ; length of the message
+    syscall
 
-		mov rax,0
-		mov rdi,0
-		mov rsi,nm
-		mov rdx,20
-		syscall
-		mov [len],rax
-
-		mov rax,1
-		mov rdi,1
-		mov rsi,msg2
-		mov rdx,msg2len
-		syscall
-
-		mov rax,1
-		mov rdi,1
-		mov rsi,nm
-		mov rdx,[len]
-		syscall
-
-		mov rdx,60
-		mov rdi,0
-		syscall
+    ; syscall: exit(0)
+    mov rax, 60         ; syscall number for exit
+    xor rdi, rdi        ; exit code 0
+    syscall
