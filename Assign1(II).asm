@@ -1,6 +1,4 @@
 
-; OS: Linux x86-64
-; Assembler: NASM
 %macro io 4
     ; Simplified syscall macro for read/write/exit
     ; %1: syscall number, %2: fd, %3: buffer, %4: length
