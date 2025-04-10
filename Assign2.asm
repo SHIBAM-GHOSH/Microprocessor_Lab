@@ -54,7 +54,7 @@ _start:
 
     ; After syscall, RAX contains number of bytes read (includes Enter key)
     ; Subtract 1 to remove newline character from length
-    ;dec rax
+    dec rax
     mov [length], al       ; Store the actual input length in memory
 
     ; Display output message
