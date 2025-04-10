@@ -1,125 +1,131 @@
+; NASM x86-64 program: Accept 5 hexadecimal numbers, store in array, and print them
 
 %macro io 4
-    ; Simplified syscall macro for read/write/exit
-    ; %1: syscall number, %2: fd, %3: buffer, %4: length
-    mov rax, %1
-    mov rdi, %2
-    mov rsi, %3
-    mov rdx, %4
+    ; Macro to simplify Linux syscall usage
+    ; %1: syscall number (e.g., 0=read, 1=write, 60=exit)
+    ; %2: file descriptor (0=stdin, 1=stdout)
+    ; %3: buffer address
+    ; %4: length of input/output
+    mov rax, %1        ; Set syscall number
+    mov rdi, %2        ; Set file descriptor
+    mov rsi, %3        ; Set buffer address
+    mov rdx, %4        ; Set buffer length
+    syscall            ; Make syscall
+%endmacro
+
+%macro exit 0
+    ; Exit the program cleanly with status code 0
+    mov rax, 60        ; Exit syscall number
+    xor rdi, rdi       ; Status 0 (success)
     syscall
 %endmacro
 
 section .data
-    msg1 db "Write an X86/64 ALP to accept five hexadecimal numbers from user and store them in an array and display the accepted numbers.", 10
+    ; Instruction and label messages
+    msg1 db "accept 5 hexadecimal numbers from user and store them in an array and display the accepted numbers",10
+        
     msg1len equ $ - msg1
 
-    msg2 db "Enter five 64-bit hexadecimal numbers:", 10
+    msg2 db "Enter 5 64-bit hexadecimal numbers (0-9, A-F only): ", 10
     msg2len equ $ - msg2
 
-    msg3 db "The five 64-bit hexadecimal numbers are:", 10
+    msg3 db "5 64-bit hexadecimal numbers are: ", 10
     msg3len equ $ - msg3
 
-    newline db 10
+    newline db 10        ; Newline character
 
 section .bss
-    ascii  resb 17       ; buffer to store 16-char hex string + newline
-    hexnum resq 5        ; array to store 5 x 64-bit numbers
+    asciinum resb 17     ; Buffer to read 16 hex digits + 1 newline/null
+    hexnum   resq 5      ; Reserve space for 5 unsigned 64-bit numbers
 
 section .text
-    global _start
+global _start
 
 _start:
-    ; Display instructions
+    ; Display intro and input prompt
     io 1, 1, msg1, msg1len
     io 1, 1, msg2, msg2len
 
-    ; Read 5 hex numbers from user
-    mov rcx, 5           ; loop counter for 5 numbers
-    mov rsi, hexnum      ; pointer to array
+    mov rcx, 5           ; Set loop counter to 5
+    mov rsi, hexnum      ; Point rsi to start of hexnum array
 
 read_loop:
-    push rcx
-    push rsi
+    push rcx             ; Save loop counter
+    push rsi             ; Save array pointer
 
-    io 0, 0, ascii, 17   ; read input from user (16 hex digits + newline)
-    call ascii_hex64     ; convert ASCII hex -> binary (in RBX)
-    
-    pop rsi
-    mov [rsi], rbx       ; store 64-bit result
-    add rsi, 8           ; move to next array slot
-    pop rcx
-    loop read_loop
+    io 0, 0, asciinum, 17  ; Read hex string from user
+    call ascii_hex64       ; Convert ASCII hex to binary in rbx
 
-    ; Display the message before output
-    io 1, 1, msg3, msg3len
+    pop rsi              ; Restore rsi to current array slot
+    mov [rsi], rbx       ; Store converted number
+    add rsi, 8           ; Move to next 64-bit slot
+    pop rcx              ; Restore loop counter
+    loop read_loop       ; Repeat 5 times
 
-    ; Display 5 stored hex numbers
-    mov rcx, 5
-    mov rsi, hexnum
+    io 1, 1, msg3, msg3len   ; Display output header
+
+    mov rcx, 5           ; Set loop counter again
+    mov rsi, hexnum      ; Reset pointer to array
 
 print_loop:
-    push rcx
-    push rsi
+    push rcx             ; Save counter
+    push rsi             ; Save pointer
 
-    mov rbx, [rsi]       ; load number from array
-    call hex_ascii64     ; convert to ASCII hex string
+    mov rbx, [rsi]       ; Load current 64-bit number
+    call hex_ascii64     ; Convert and print as ASCII hex
 
-    pop rsi
-    add rsi, 8
-    pop rcx
-    loop print_loop
+    pop rsi              ; Restore pointer
+    add rsi, 8           ; Move to next number
+    pop rcx              ; Restore loop counter
+    loop print_loop      ; Repeat 5 times
 
-    ; Exit the program
-    mov rax, 60
-    xor rdi, rdi
-    syscall
+    exit                 ; Exit program
 
-; ----------------------------------
-; Convert ASCII hex string to 64-bit binary (in RBX)
-; Expects ASCII string at [ascii]
-; ----------------------------------
+; -------------------------------------------
+; Convert 16-digit ASCII hex string to binary
+; Input: [asciinum] buffer (16 hex digits)
+; Output: rbx contains the 64-bit binary number
+; -------------------------------------------
 ascii_hex64:
-    mov rsi, ascii
-    xor rbx, rbx         ; clear result
-    mov rcx, 16          ; loop for 16 characters
+    mov rsi, asciinum    ; Start of input string
+    xor rbx, rbx         ; Clear rbx accumulator
+    mov rcx, 16          ; 16 hex characters to process
 
-a2h_loop:
-    rol rbx, 4           ; make space for new nibble (shift left 4 bits)
-    mov al, [rsi]        ; load next ASCII char
+.convert_loop:
+    rol rbx, 4           ; Shift 4 bits left for new nibble
+    mov al, [rsi]        ; Load next ASCII character
     cmp al, '9'
-    jbe .convert_digit   ; if <= '9', it's a digit
-    sub al, 7h           ; adjust ASCII A-F (or a-f)
-
-.convert_digit:
-    sub al, '0'          ; convert ASCII to value (0-15)
-    add bl, al           ; add nibble to result
-    inc rsi
-    loop a2h_loop
+    jbe .is_digit        ; If '0'-'9', jump to digit processing
+    sub al, 7h           ; Adjust for 'A'-'F'
+.is_digit:
+    sub al, 30h          ; Convert ASCII to 0-15 value
+    add bl, al           ; Merge nibble into rbx
+    inc rsi              ; Move to next char
+    loop .convert_loop
     ret
 
-; ----------------------------------
-; Convert 64-bit binary number (in RBX) to ASCII hex string
-; Result stored in [ascii]
-; ----------------------------------
+; -------------------------------------------
+; Convert 64-bit binary number to ASCII hex
+; Input: rbx = number to convert
+; Output: asciinum = 16 hex digit ASCII string, printed
+; -------------------------------------------
 hex_ascii64:
-    mov rsi, ascii
-    mov rcx, 16          ; 64-bit = 16 hex digits
+    mov rsi, asciinum    ; Output buffer start
+    mov rcx, 16          ; Convert 16 hex digits
 
-h2a_loop:
-    rol rbx, 4           ; get next nibble (left rotate)
+.to_ascii_loop:
+    rol rbx, 4           ; Rotate to access next nibble
     mov al, bl
-    and al, 0Fh          ; isolate lowest 4 bits
-
+    and al, 0Fh          ; Mask lower nibble
     cmp al, 9
-    jbe .digit
-    add al, 7h           ; for A-F
+    jbe .to_char         ; If <= 9, jump to store
+    add al, 7h           ; Adjust for 'A'-'F'
+.to_char:
+    add al, 30h          ; Convert to ASCII
+    mov [rsi], al        ; Store character
+    inc rsi              ; Advance buffer pointer
+    loop .to_ascii_loop
 
-.digit:
-    add al, '0'          ; convert to ASCII
-    mov [rsi], al
-    inc rsi
-    loop h2a_loop
-
-    io 1, 1, ascii, 16   ; print the 16-char hex string
-    io 1, 1, newline, 1
+    io 1, 1, asciinum, 16 ; Print ASCII hex string
+    io 1, 1, newline, 1   ; Print newline
     ret
