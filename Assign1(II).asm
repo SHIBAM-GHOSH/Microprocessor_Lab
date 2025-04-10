@@ -12,7 +12,7 @@
 %macro exit 0
     ; Exit the program cleanly with status code 0
     mov rax, 60        ; Exit syscall number
-    xor rdi, rdi       ; Status 0 (success)
+    mov rdi,0       ; Status 0 (success)
     syscall
 %endmacro
 
