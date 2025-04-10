@@ -2,14 +2,10 @@
 
 %macro io 4
     ; Macro to simplify Linux syscall usage
-    ; %1: syscall number (e.g., 0=read, 1=write, 60=exit)
-    ; %2: file descriptor (0=stdin, 1=stdout)
-    ; %3: buffer address
-    ; %4: length of input/output
-    mov rax, %1        ; Set syscall number
-    mov rdi, %2        ; Set file descriptor
-    mov rsi, %3        ; Set buffer address
-    mov rdx, %4        ; Set buffer length
+    mov rax, %1        ; Set syscall number       %1: syscall number (e.g., 0=read, 1=write, 60=exit)
+    mov rdi, %2        ; Set file descriptor     %2: file descriptor (0=stdin, 1=stdout)
+    mov rsi, %3        ; Set buffer address       %3: buffer address
+    mov rdx, %4        ; Set buffer length       %4: length of input/output
     syscall            ; Make syscall
 %endmacro
 
