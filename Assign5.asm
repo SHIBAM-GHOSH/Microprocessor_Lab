@@ -1,9 +1,5 @@
 ; X86-64 NASM Program to:
-; 1. Convert 4-digit Hex to 5-digit BCD
-; 2. Convert 5-digit BCD to Hex
-; 3. Exit
 
-; === Macros ===
 %macro write 2
     mov rax, 1
     mov rdi, 1
@@ -33,7 +29,7 @@ section .data
 
     endl db 10
 
-; === BSS Section ===
+
 section .bss
     choice resb 2
     hex_input resb 5
