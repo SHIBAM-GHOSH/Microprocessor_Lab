@@ -84,7 +84,7 @@ print_loop:
 ; -------------------------------------------
 ascii_hex64:
     mov rsi, asciinum    ; Start of input string
-    xor rbx, rbx         ; Clear rbx accumulator
+    xor rbx,0       ; Clear rbx accumulator
     mov rcx, 16          ; 16 hex characters to process
 
 .convert_loop:
