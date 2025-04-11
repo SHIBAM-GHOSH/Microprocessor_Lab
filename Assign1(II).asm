@@ -32,7 +32,7 @@ section .data
 
 section .bss
     asciinum resb 17     ; Buffer to read 16 hex digits + 1 newline/null
-    hexnum   resq 5      ; Reserve space for 5 unsigned 64-bit numbers
+    array   resq 5      ; Reserve space for 5 unsigned 64-bit numbers
 
 section .text
 global _start
@@ -43,7 +43,7 @@ _start:
     io 1, 1, msg2, msg2len
 
     mov rcx, 5           ; Set loop counter to 5
-    mov rsi, hexnum      ; Point rsi to start of hexnum array
+    mov rsi, array      ; Point rsi to start of array array
 
 read_loop:
     push rcx             ; Save loop counter
@@ -61,7 +61,7 @@ read_loop:
     io 1, 1, msg3, msg3len   ; Display output header
 
     mov rcx, 5           ; Set loop counter again
-    mov rsi, hexnum      ; Reset pointer to array
+    mov rsi, array      ; Reset pointer to array
 
 print_loop:
     push rcx             ; Save counter
